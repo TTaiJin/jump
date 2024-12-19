@@ -105,7 +105,7 @@ class JumpApplicationTests {
         Answer answer = new Answer();
         answer.setContent("네 자동으로 생성됩니다.");
         answer.setQuestion(question);
-        answer.setCrateDate(LocalDateTime.now());
+        answer.setCreateDate(LocalDateTime.now());
         this.answerRepository.save(answer);
     }
 
