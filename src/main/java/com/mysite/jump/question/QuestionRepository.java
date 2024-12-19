@@ -1,4 +1,4 @@
-package com.mysite.jump;
+package com.mysite.jump.question;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 

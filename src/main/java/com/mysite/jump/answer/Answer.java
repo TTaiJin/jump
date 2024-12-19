@@ -1,5 +1,6 @@
-package com.mysite.jump;
+package com.mysite.jump.answer;
 
+import com.mysite.jump.question.Question;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
