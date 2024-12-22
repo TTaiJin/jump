@@ -11,6 +11,18 @@
             </div>
         </div>
     </div>
+
+    <!-- 정렬 옵션 -->
+    <div class="row my-3">
+        <div class="col-12">
+            <select id="sortOption" class="form-select" aria-label="정렬 옵션" style="width: auto;">
+                <option value="newest" th:selected="${sortOption == 'newest'}">최신순</option>
+                <option value="oldest" th:selected="${sortOption == 'oldest'}">오래된순</option>
+                <option value="recommend" th:selected="${sortOption == 'recommend'}">추천순</option>
+            </select>
+        </div>
+    </div>
+
     <table class="table">
         <thead class="table-dark">
         <tr class="text-center">
@@ -27,7 +39,12 @@
                 <a th:href="@{|/question/detail/${question.id}|}" th:text="${question.subject}"></a>
                 <span class="text-danger small ms-2"
                       th:if="${#lists.size(question.answerList) > 0}"
-                      th:text="${#lists.size(question.answerList)}">
+                      th:text="댓글 + ${#lists.size(question.answerList)}">
+                </span>
+
+                <span class="text-bg-warning small ms-2"
+                      th:if="${question.recommend > 0}"
+                      th:text="추천 + ${question.recommend}">
                 </span>
             </td>
             <td><span th:if="${question.author != null}" th:text="${question.author.username}"></span></td>
@@ -60,6 +77,7 @@
     <form th:action="@{/question/list}" method="get" id="searchForm">
         <input type="hidden" id="kw" name="kw" th:value="${kw}">
         <input type="hidden" id="page" name="page" th:value="${paging.number}">
+        <input type="hidden" id="sortOption" name="sortOption" th:value="${sortOption != null ? sortOption : 'newest'}">
     </form>
 </div>
 <script layout:fragment="script" type='text/javascript'>
@@ -75,6 +93,13 @@
         document.getElementById('kw').value = document.getElementById('search_kw').value;
         document.getElementById('page').value = 0;  // 검색버튼을 클릭할 경우 0페이지부터 조회한다.
         document.getElementById('searchForm').submit();
+    });
+    //정렬 스크립트
+    const sortOptionElement = document.getElementById("sortOption");
+    sortOptionElement.addEventListener('change', function() {
+        const form = document.getElementById('searchForm');
+        form.querySelector('#sortOption').value = this.value; // 새로운 값 반영
+        form.submit(); // 폼 제출
     });
 </script>
 </html>

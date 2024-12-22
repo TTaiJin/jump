@@ -27,10 +27,12 @@ public class QuestionController {
     @GetMapping("/list")
     public String list(Model model,
                        @RequestParam(value = "page", defaultValue = "0") int page,
-                       @RequestParam(value = "kw", defaultValue = "") String kw) {
-        Page<Question> paging = this.questionService.getList(page, kw);
+                       @RequestParam(value = "kw", defaultValue = "") String kw,
+                       @RequestParam(value = "sortOption", defaultValue = "newest") String sortOption) {
+        Page<Question> paging = this.questionService.getList(page, kw, sortOption);
         model.addAttribute("paging", paging);
         model.addAttribute("kw", kw);
+        model.addAttribute("sortOption", sortOption);
         return "question_list";
     }
 

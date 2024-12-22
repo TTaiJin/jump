@@ -13,7 +13,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -64,10 +63,16 @@ public class QuestionService {
         this.questionRepository.save(question);
     }
 
-    public Page<Question> getList(int page, String kw) {
-        List<Sort.Order> sorts = new ArrayList<>();
-        sorts.add(Sort.Order.desc("createDate"));
-        Pageable pageable = PageRequest.of(page, 10, Sort.by(sorts));
+    public Page<Question> getList(int page, String kw, String sortOption) {
+        Sort sort;
+        if (sortOption.equals("oldest")) {
+            sort = Sort.by(Sort.Order.asc("createDate"));
+        } else if (sortOption.equals("recommend")) {
+            sort = Sort.by(Sort.Order.desc("recommend"));
+        } else {
+            sort = Sort.by(Sort.Order.desc("createDate"));
+        }
+        Pageable pageable = PageRequest.of(page, 10, sort);
         Specification<Question> specification = search(kw);
         return this.questionRepository.findAll(specification ,pageable);
     }
@@ -85,6 +90,7 @@ public class QuestionService {
 
     public void vote(Question question, SiteUser siteUser) {
         question.getVoter().add(siteUser);
+        question.setRecommend(question.getVoter().size());
         this.questionRepository.save(question);
     }
 }

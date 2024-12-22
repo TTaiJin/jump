@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -36,4 +37,17 @@ public class Question {
 
     @ManyToMany
     Set<SiteUser> voter;
+
+    private Integer recommend;
+
+    // 추천 수 업데이트 메서드
+    @PrePersist
+    @PreUpdate
+    private void updateRecommend() {
+        if (this.voter == null) {
+            this.voter = new HashSet<>();
+        }
+        this.recommend = voter.size();
+    }
+
 }
