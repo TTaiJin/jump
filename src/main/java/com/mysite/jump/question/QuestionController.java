@@ -1,6 +1,8 @@
 package com.mysite.jump.question;
 
+import com.mysite.jump.answer.Answer;
 import com.mysite.jump.answer.AnswerForm;
+import com.mysite.jump.answer.AnswerService;
 import com.mysite.jump.user.SiteUser;
 import com.mysite.jump.user.UserService;
 import jakarta.validation.Valid;
@@ -22,6 +24,7 @@ import java.security.Principal;
 public class QuestionController {
 
     private final QuestionService questionService;
+    private final AnswerService answerService;
     private final UserService userService;
 
     @GetMapping("/list")
@@ -37,9 +40,17 @@ public class QuestionController {
     }
 
     @GetMapping("/detail/{id}")
-    public String detail(Model model, @PathVariable("id") Integer id, AnswerForm answerForm) {
+    public String detail(Model model,
+                         @PathVariable("id") Integer id,
+                         AnswerForm answerForm,
+                         @RequestParam(value = "page", defaultValue = "0") int page,
+                         @RequestParam(value = "sortOption", defaultValue = "newest") String sortOption) {
         Question question = this.questionService.getQuestion(id);
+
+        Page<Answer> paging = this.answerService.getList(question, page, 20, sortOption);
         model.addAttribute("question", question);
+        model.addAttribute("paging", paging);
+        model.addAttribute("sortOption", sortOption);
         return "question_detail";
     }
 

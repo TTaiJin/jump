@@ -2,6 +2,7 @@ package com.mysite.jump;
 
 import com.mysite.jump.answer.Answer;
 import com.mysite.jump.answer.AnswerRepository;
+import com.mysite.jump.answer.AnswerService;
 import com.mysite.jump.question.Question;
 import com.mysite.jump.question.QuestionRepository;
 import com.mysite.jump.question.QuestionService;
@@ -28,6 +29,9 @@ class JumpApplicationTests {
 
     @Autowired
     private QuestionService questionService;
+
+    @Autowired
+    private AnswerService answerService;
 
     @Test
     void testJpa1() {
@@ -140,6 +144,17 @@ class JumpApplicationTests {
             String subject = String.format("테스트 데이터입니다:[%03d]", i);
             String content = "내용무";
             this.questionService.create(subject, content, null);
+        }
+    }
+
+    @Test
+    void testJpa13() {
+        for (int i = 1; i <= 300; i++) {
+            Question question = questionService.getQuestion(i);
+            for (int j = 1; j <= 100; j++) {
+                String content = "테스트답변" + i;
+                this.answerService.create(question, content, null);
+            }
         }
     }
 }

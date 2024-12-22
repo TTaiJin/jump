@@ -40,7 +40,10 @@ public class Answer {
     @PrePersist
     @PreUpdate
     private void updateRecommend() {
-        this.recommend = this.voter.size();
+        if (this.voter == null) {
+            this.voter = new HashSet<>();
+        }
+        this.recommend = voter.size();
     }
 
 }

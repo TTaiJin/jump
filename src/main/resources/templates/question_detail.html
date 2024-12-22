@@ -18,8 +18,13 @@
                 </div>
             </div>
             <div class="my-3">
-                <a href="javascript:void(0);" class="recommend btn btn-sm btn-outline-secondary"
+                <!--<a href="javascript:void(0);" class="recommend btn btn-sm btn-outline-secondary"
                    th:data-uri="@{|/question/vote/${question.id}|}">
+                    추천
+                    <span class="badge rounded-pill bg-success" th:text="${#lists.size(question.voter)}"></span>
+                </a>-->
+                <a href="javascript:void(0);" class="recommend btn btn-sm btn-outline-secondary"
+                   th:data-uri="@{|/question/vote/${question.id}?sortOption=${sortOption}&page=${paging.number}|}">
                     추천
                     <span class="badge rounded-pill bg-success" th:text="${#lists.size(question.voter)}"></span>
                 </a>
@@ -36,8 +41,41 @@
     </div>
     <!-- 답변의 갯수 표시 -->
     <h5 class="border-bottom my-3 py-2" th:text="|${#lists.size(question.answerList)}개의 답변이 있습니다.|"></h5>
+
+    <!-- 답변 페이징 추가된 부분 -->
+    <div th:if="${paging != null}">
+        <ul class="pagination justify-content-center">
+            <li class="page-item" th:classappend="${paging.hasPrevious() ? '' : 'disabled'}">
+                <a class="page-link" href="javascript:void(0)" th:data-page="${paging.number - 1}">
+                    <span>이전</span>
+                </a>
+            </li>
+            <li th:each="page : ${#numbers.sequence(0, paging.totalPages - 1)}"
+                th:if="${page >= paging.number - 5 and page <= paging.number + 5}"
+                th:classappend="${page == paging.number ? 'active' : ''}" class="page-item">
+                <a th:text="${page + 1}" class="page-link" href="javascript:void(0)" th:data-page="${page}"></a>
+            </li>
+            <li class="page-item" th:classappend="${paging.hasNext() ? '' : 'disabled'}">
+                <a class="page-link" href="javascript:void(0)" th:data-page="${paging.number + 1}">
+                    <span>다음</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- 정렬 옵션 -->
+    <div class="row my-3">
+        <div class="col-12">
+            <select id="sortOption" class="form-select" aria-label="정렬 옵션" style="width: auto;">
+                <option value="newest" th:selected="${sortOption == 'newest'}">최신순</option>
+                <option value="oldest" th:selected="${sortOption == 'oldest'}">오래된순</option>
+                <option value="recommend" th:selected="${sortOption == 'recommend'}">추천순</option>
+            </select>
+        </div>
+    </div>
+
     <!-- 답변 반복 시작 -->
-    <div class="card my-3" th:each="answer : ${question.answerList}">
+    <div class="card my-3" th:each="answer : ${paging.content}">
         <a th:id="|answer_${answer.id}|"></a>
         <div class="card-body">
             <div class="card-text" th:utext="${@commonUtil.markdown(answer.content)}"></div>
@@ -54,8 +92,12 @@
                 </div>
             </div>
             <div class="my-3">
+                <!--<a href="javascript:void(0);" class="recommend btn btn-sm btn-outline-secondary"
+                   th:data-uri="@{|/answer/vote/${answer.id}|}">추천
+                    <span class="badge rounded-pill bg-success" th:text="${#lists.size(answer.voter)}"></span>
+                </a>-->
                 <a href="javascript:void(0);" class="recommend btn btn-sm btn-outline-secondary"
-                   th:data-uri="@{|/answer/vote/${answer.id}|}">
+                   th:data-uri="@{|/answer/vote/${answer.id}?sortOption=${sortOption}&page=${paging.number}|}">
                     추천
                     <span class="badge rounded-pill bg-success" th:text="${#lists.size(answer.voter)}"></span>
                 </a>
@@ -71,13 +113,17 @@
         </div>
     </div>
     <!-- 답변 반복 끝  -->
+
     <!-- 답변 작성 -->
     <form th:action="@{|/answer/create/${question.id}|}" th:object="${answerForm}" method="post" class="my-3">
         <div th:replace="~{form_errors :: formErrorsFragment}"></div>
-        <textarea sec:authorize="isAnonymous()" disabled th:field="*{content}" class="form-control"
-                  rows="10"></textarea>
+        <textarea sec:authorize="isAnonymous()" disabled th:field="*{content}" class="form-control" rows="10"></textarea>
         <textarea sec:authorize="isAuthenticated()" th:field="*{content}" class="form-control" rows="10"></textarea>
         <input type="submit" value="답변등록" class="btn btn-primary my-2">
+    </form>
+    <form id="searchForm" th:action="@{/question/detail/{id}(id=${question.id})}" method="get">
+        <input type="hidden" id="page" name="page" value="0" />
+        <input type="hidden" id="sortOption" name="sortOption" value="newest" /> <!-- 정렬 옵션 hidden 필드 추가 -->
     </form>
 </div>
 <script layout:fragment="script" type='text/javascript'>
@@ -86,17 +132,49 @@
         element.addEventListener('click', function () {
             if (confirm("정말로 삭제하시겠습니까?")) {
                 location.href = this.dataset.uri;
-            }
-            ;
+            };
         });
     });
-    const recommend_elements = document.getElementsByClassName("recommend");
-    Array.from(recommend_elements).forEach(function(element) {
-        element.addEventListener('click', function() {
-            if(confirm("정말로 추천하시겠습니까?")) {
+
+/*    const recommend_elements = document.getElementsByClassName("recommend");
+    Array.from(recommend_elements).forEach(function (element) {
+        element.addEventListener('click', function () {
+            if (confirm("정말로 추천하시겠습니까?")) {
                 location.href = this.dataset.uri;
             };
         });
+    });*/
+    const recommendElements = document.getElementsByClassName("recommend");
+    Array.from(recommendElements).forEach(function (element) {
+        element.addEventListener('click', function () {
+            if (confirm("정말로 추천하시겠습니까?")) {
+                const uri = this.dataset.uri;
+                const targetId = this.closest('.card').querySelector('a').id; // 답변 ID 추출
+                fetch(uri)
+                    .then(() => {
+                        // 추천 후 페이지 리로드
+                        location.hash = `#${targetId}`; // 해당 답변으로 스크롤 이동
+                        location.reload();
+                    });
+            }
+        });
+    });
+
+    // 페이지 변경 시 폼 제출
+    const page_elements = document.getElementsByClassName("page-link");
+    Array.from(page_elements).forEach(function (element) {
+        element.addEventListener('click', function () {
+            document.getElementById('page').value = this.dataset.page;
+            document.getElementById('searchForm').submit();
+        });
+    });
+
+    // 정렬 옵션 변경 시 폼 제출
+    const sortOptionElement = document.getElementById("sortOption");
+    sortOptionElement.addEventListener('change', function() {
+        const form = document.getElementById('searchForm');
+        form.querySelector('#sortOption').value = this.value; // 새로운 값 반영
+        form.submit(); // 폼 제출
     });
 </script>
 </html>
