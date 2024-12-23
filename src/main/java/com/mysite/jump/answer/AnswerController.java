@@ -6,15 +6,13 @@ import com.mysite.jump.user.SiteUser;
 import com.mysite.jump.user.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.security.Principal;
@@ -28,17 +26,29 @@ public class AnswerController {
     private final AnswerService answerService;
     private final UserService userService;
 
+
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/create/{id}")
-    public String createAnswer(Model model, @PathVariable("id") Integer id, @Valid AnswerForm answerForm, BindingResult bindingResult, Principal principal) {
+    public String createAnswer(Model model,
+                               @PathVariable("id") Integer id,
+                               @Valid AnswerForm answerForm,
+                               BindingResult bindingResult,
+                               Principal principal,
+                               @RequestParam(value="page", defaultValue = "0") int page,
+                               @RequestParam(value = "sortOption", defaultValue = "newest") String sortOption) {
         Question question = this.questionService.getQuestion(id);
         SiteUser siteUser = this.userService.getUser(principal.getName());
         if (bindingResult.hasErrors()) {
+            Page<Answer> paging = this.answerService.getList(question, page, 20, sortOption);
             model.addAttribute("question", question);
+            model.addAttribute("paging", paging);
+            model.addAttribute("sortOption", sortOption);
+            model.addAttribute("answerForm", answerForm);
             return "question_detail";
         }
         Answer answer = this.answerService.create(question, answerForm.getContent(), siteUser);
-        return String.format("redirect:/question/detail/%s#answer_%s)", answer.getQuestion().getId(), answer.getId());
+
+        return String.format("redirect:/question/detail/%s#answer_%s", answer.getQuestion().getId(), answer.getId());
     }
 
     @PreAuthorize("isAuthenticated()")
